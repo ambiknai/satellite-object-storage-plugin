@@ -12,28 +12,37 @@
 package driver
 
 import (
+	"errors"
 	"fmt"
+	"github.com/IBM/satellite-object-storage-plugin/pkg/s3client"
 	csi "github.com/container-storage-interface/spec/lib/go/csi"
+	"github.com/kubernetes-csi/drivers/pkg/csi-common"
 	commonError "github.ibm.com/alchemy-containers/ibm-csi-common/pkg/messages"
 	"go.uber.org/zap"
-	"github.com/kubernetes-csi/drivers/pkg/csi-common"
-	"errors"
 )
 
+const (
+	kib    int64 = 1024
+	mib    int64 = kib * 1024
+	gib    int64 = mib * 1024
+	gib10  int64 = gib * 10
+	gib100 int64 = gib * 100
+	tib    int64 = gib * 1024
+	tib100 int64 = tib * 100
+)
 
 type s3Driver struct {
-	name          string
+	name     string
 	driver   *csicommon.CSIDriver
+	s3client s3client.S3Client
 	endpoint string
 
-	ids *identityServer
-	ns  *nodeServer
-	cs  *controllerServer
+	ids           *identityServer
+	ns            *nodeServer
+	cs            *controllerServer
 	vendorVersion string
 	logger        *zap.Logger
-
 }
-
 
 type s3Volume struct {
 	VolName string `json:"volName"`
@@ -41,6 +50,20 @@ type s3Volume struct {
 	VolSize int64  `json:"volSize"`
 	VolPath string `json:"volPath"`
 }
+
+type s3VolumeSnapshot struct {
+	Name      string `json:"name"`
+	Id        string `json:"id"`
+	VolID     string `json:"volID"`
+	Path      string `json:"path"`
+	CreateAt  int64  `json:"createAt"`
+	SizeBytes int64  `json:"sizeBytes"`
+}
+
+var (
+	s3CosVolumes         map[string]s3Volume
+	s3CosVolumeSnapshots map[string]s3VolumeSnapshot
+)
 
 // GetS3CSIDriver ...
 func GetS3CSIDriver() *s3Driver {
@@ -71,8 +94,8 @@ func (csiDriver *s3Driver) NewS3(nodeID string, endpoint string) (*s3Driver, err
 
 	driver := csicommon.NewCSIDriver(csiDriver.name, csiDriver.vendorVersion, nodeID)
 	if driver == nil {
-		 csiDriver.logger.Error("Failed to initialize CSI Driver.")
-		 return nil, errors.New("Failed to initialize CSI Driver")
+		csiDriver.logger.Error("Failed to initialize CSI Driver.")
+		return nil, errors.New("Failed to initialize CSI Driver")
 	}
 
 	csis3Driver := &s3Driver{
@@ -120,4 +143,13 @@ func (s3 *s3Driver) Run() {
 	s := csicommon.NewNonBlockingGRPCServer()
 	s.Start(s3.endpoint, s3.ids, s3.cs, s3.ns)
 	s.Wait()
+}
+
+func getVolumeByName(volName string) (s3Volume, error) {
+	for _, s3CosVol := range s3CosVolumes {
+		if s3CosVol.VolName == volName {
+			return s3CosVol, nil
+		}
+	}
+	return s3Volume{}, fmt.Errorf("volume name %s does not exit in the volumes list", volName)
 }

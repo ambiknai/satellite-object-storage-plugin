@@ -8,14 +8,11 @@
  * the U.S. Copyright Office.
  ******************************************************************************/
 
-
- // Package config ...
+// Package config ...
 package config
 
 const (
 
 	// CSIPluginGithubName ...
 	CSIPluginGithubName = "satellite-object-storage-plugin"
-
-
 )
