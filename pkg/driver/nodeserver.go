@@ -29,8 +29,8 @@ import (
 
 type nodeServer struct {
 	*csicommon.DefaultNodeServer
-	*s3Driver
 	mux sync.Mutex
+	*s3Driver
 }
 
 func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublishVolumeRequest) (*csi.NodePublishVolumeResponse, error) {
@@ -41,6 +41,7 @@ func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 		secretKey string
 	)
 	var mounterObj mounter.Mounter
+
 	publishContext := req.GetPublishContext()
 	controlleRequestID := publishContext[PublishInfoRequestID]
 	ctxLogger, requestID := utils.GetContextLoggerWithRequestID(ctx, false, &controlleRequestID)
@@ -117,7 +118,7 @@ func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 		return nil, err
 	}
 
-	ctxLogger.Info(fmt.Sprint("s3: bucket %s successfuly mounted to %s", attrib["bucket-name"], targetPath))
+	ctxLogger.Info(fmt.Sprintf("s3: bucket %s successfuly mounted to %s", attrib["bucket-name"], targetPath))
 	return &csi.NodePublishVolumeResponse{}, nil
 }
 

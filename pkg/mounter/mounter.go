@@ -14,6 +14,9 @@ type Mounter interface {
 	Unmount(target string) error
 }
 
+var (
+	command            = exec.Command
+)
 const (
 	s3fsMounterType     = "s3fs"
 	goofysMounterType   = "goofys"
@@ -35,15 +38,14 @@ func NewMounter(mounter string, bucket string, objpath string, endpoint string, 
 	}
 }
 
-func fuseMount(path string, command string, args []string) error {
+func fuseMount(path string, comm string, args []string) error {
 	fmt.Sprint("-fuseMount-")
 	fmt.Sprintf("fuseMount args:\n\tpath: <%s>\n\tcommand: <%s>\n\targs: <%s>", path, command, args)
-	cmd := exec.Command(command, args...)
+	out, err := command(comm, args...).CombinedOutput()
 
-	out, err := cmd.CombinedOutput()
 	if err != nil {
-		fmt.Sprintf("fuseMount: cmd failed: <%s>\nargs: <%s>\noutput: <%s>", command, args, out)
-		return fmt.Errorf("fuseMount: cmd failed: %s\nargs: %s\noutput: %s", command, args, out)
+		fmt.Sprintf("fuseMount: cmd failed: <%s>\nargs: <%s>\noutput: <%s>", comm, args, out)
+		return fmt.Errorf("fuseMount: cmd failed: %s\nargs: %s\noutput: %s", comm, args, out)
 	}
 
 	return waitForMount(path, 10*time.Second)

@@ -95,13 +95,14 @@ func handle(logger *zap.Logger) {
 	logger.Info("Controller Mutex Lock enabled", zap.Bool("LockEnabled", *utils.LockEnabled))
 	// Setup CSI Driver
 	S3CSIDriver := driver.GetS3CSIDriver()
-	driver, err := S3CSIDriver.NewS3(*nodeID, *endpoint)
+
+	err := S3CSIDriver.Setups3Driver(logger, *nodeID, *endpoint)
 	if err != nil {
 		log.Fatal(err)
 		os.Exit(1)
 	}
 	serveMetrics()
-	driver.Run()
+	S3CSIDriver.Run()
 }
 
 func serveMetrics() {

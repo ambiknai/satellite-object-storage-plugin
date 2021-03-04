@@ -14,9 +14,11 @@ require (
 	github.com/container-storage-interface/spec v1.2.0
 	github.com/ctrox/csi-s3 v1.1.1
 	github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b
+	github.com/google/uuid v1.1.1
 	github.com/kubernetes-csi/drivers v1.0.2
 	github.com/mitchellh/go-ps v0.0.0-20170309133038-4fdf99ab2936
 	github.com/prometheus/client_golang v1.9.0
+	github.com/stretchr/testify v1.6.1
 	github.ibm.com/alchemy-containers/ibm-csi-common v1.0.0-beta08
 	go.uber.org/zap v1.16.0
 	golang.org/x/net v0.0.0-20200707034311-ab3426394381

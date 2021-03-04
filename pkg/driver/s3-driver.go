@@ -12,7 +12,6 @@
 package driver
 
 import (
-	"errors"
 	"fmt"
 	"github.com/IBM/satellite-object-storage-plugin/pkg/s3client"
 	csi "github.com/container-storage-interface/spec/lib/go/csi"
@@ -86,29 +85,19 @@ func (csiDriver *s3Driver) Setups3Driver(lgr *zap.Logger, name, vendorVersion st
 
 	csiDriver.logger.Info("Successfully setup IBM CSI driver")
 
+	// Create GRPC servers
+	csiDriver.ids = csiDriver.newIdentityServer(csiDriver.driver)
+	csiDriver.ns = csiDriver.newNodeServer(csiDriver.driver)
+	csiDriver.cs = csiDriver.newControllerServer(csiDriver.driver)
+
 	return nil
-}
-
-// NewS3 initializes the driver
-func (csiDriver *s3Driver) NewS3(nodeID string, endpoint string) (*s3Driver, error) {
-
-	driver := csicommon.NewCSIDriver(csiDriver.name, csiDriver.vendorVersion, nodeID)
-	if driver == nil {
-		csiDriver.logger.Error("Failed to initialize CSI Driver.")
-		return nil, errors.New("Failed to initialize CSI Driver")
-	}
-
-	csis3Driver := &s3Driver{
-		endpoint: endpoint,
-		driver:   driver,
-	}
-	return csis3Driver, nil
 }
 
 func (s3 *s3Driver) newIdentityServer(d *csicommon.CSIDriver) *identityServer {
 	s3.logger.Info("-newIdentityServer-")
 	return &identityServer{
 		DefaultIdentityServer: csicommon.NewDefaultIdentityServer(d),
+		Driver:                s3,
 	}
 }
 
@@ -134,11 +123,6 @@ func (s3 *s3Driver) Run() {
 
 	s3.driver.AddControllerServiceCapabilities([]csi.ControllerServiceCapability_RPC_Type{csi.ControllerServiceCapability_RPC_CREATE_DELETE_VOLUME})
 	s3.driver.AddVolumeCapabilityAccessModes([]csi.VolumeCapability_AccessMode_Mode{csi.VolumeCapability_AccessMode_SINGLE_NODE_WRITER})
-
-	// Create GRPC servers
-	s3.ids = s3.newIdentityServer(s3.driver)
-	s3.ns = s3.newNodeServer(s3.driver)
-	s3.cs = s3.newControllerServer(s3.driver)
 
 	s := csicommon.NewNonBlockingGRPCServer()
 	s.Start(s3.endpoint, s3.ids, s3.cs, s3.ns)
