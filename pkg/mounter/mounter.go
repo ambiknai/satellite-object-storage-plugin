@@ -40,7 +40,7 @@ func NewMounter(mounter string, bucket string, objpath string, endpoint string, 
 
 func fuseMount(path string, comm string, args []string) error {
 	fmt.Sprint("-fuseMount-")
-	fmt.Sprintf("fuseMount args:\n\tpath: <%s>\n\tcommand: <%s>\n\targs: <%s>", path, command, args)
+	fmt.Sprintf("fuseMount args:\n\tpath: <%s>\n\tcommand: <%s>\n\targs: <%s>", path, comm, args)
 	out, err := command(comm, args...).CombinedOutput()
 
 	if err != nil {

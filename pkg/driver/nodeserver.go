@@ -33,6 +33,8 @@ type nodeServer struct {
 	*s3Driver
 }
 
+var mounterObj mounter.Mounter
+
 func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublishVolumeRequest) (*csi.NodePublishVolumeResponse, error) {
 	var (
 		val       string
@@ -40,7 +42,6 @@ func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 		accessKey string
 		secretKey string
 	)
-	var mounterObj mounter.Mounter
 
 	publishContext := req.GetPublishContext()
 	controlleRequestID := publishContext[PublishInfoRequestID]

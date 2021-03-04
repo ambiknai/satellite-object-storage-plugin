@@ -56,7 +56,6 @@ var (
 
 
 func TestNodePublishVolume(t *testing.T) {
-	command = commandExec
 	testCases := []struct {
 		name       string
 		req        *csi.NodePublishVolumeRequest
