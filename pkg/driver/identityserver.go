@@ -20,7 +20,7 @@ import (
 
 type identityServer struct {
 	*csicommon.DefaultIdentityServer
-	Driver *s3Driver
+        *s3Driver
 }
 
 // GetPluginInfo ...
@@ -28,13 +28,13 @@ func (csiIdentity *identityServer) GetPluginInfo(ctx context.Context, req *csi.G
 	ctxLogger, requestID := utils.GetContextLogger(ctx, false)
 	ctxLogger.Info("identityServer-GetPluginInfo...", zap.Reflect("Request", *req))
 
-	if csiIdentity.Driver == nil {
+	if csiIdentity.s3Driver == nil {
 		return nil, commonError.GetCSIError(ctxLogger, commonError.DriverNotConfigured, requestID, nil)
 	}
 
 	return &csi.GetPluginInfoResponse{
-		Name:          csiIdentity.Driver.name,
-		VendorVersion: csiIdentity.Driver.vendorVersion,
+		Name:          csiIdentity.s3Driver.name,
+		VendorVersion: csiIdentity.s3Driver.vendorVersion,
 	}, nil
 }
 

@@ -93,14 +93,19 @@ func handle(logger *zap.Logger) {
 	}
 	logger.Info("S3 driver version", zap.Reflect("DriverVersion", vendorVersion))
 	logger.Info("Controller Mutex Lock enabled", zap.Bool("LockEnabled", *utils.LockEnabled))
-	// Setup CSI Driver
-	S3CSIDriver := driver.GetS3CSIDriver()
 
-	err := S3CSIDriver.Setups3Driver(logger, *nodeID, *endpoint)
+	csiDriver := driver.GetS3CSIDriver()
+	
+	csiDriver, err := csiDriver.Setups3Driver(logger, csiConfig.CSIPluginGithubName, vendorVersion)
+        if err != nil {
+                log.Fatal(err)
+                os.Exit(1)
+        }
+	S3CSIDriver, err := csiDriver.NewS3CosDriver(*nodeID, *endpoint)
 	if err != nil {
-		log.Fatal(err)
-		os.Exit(1)
-	}
+                log.Fatal(err)
+                os.Exit(1)
+        }
 	serveMetrics()
 	S3CSIDriver.Run()
 }

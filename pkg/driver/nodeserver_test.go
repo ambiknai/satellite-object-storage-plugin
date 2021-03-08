@@ -12,17 +12,13 @@
 package driver
 
 import (
-	"fmt"
-	"reflect"
 	"testing"
-        "io/ioutil"
-	"os/exec"
-	"os"
 	csi "github.com/container-storage-interface/spec/lib/go/csi"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	 fakemounter "github.com/IBM/satellite-object-storage-plugin/pkg/driver/fake/mounter"
 )
 
 const defaultVolumeID = "csiprovidervolumeid"
@@ -34,28 +30,10 @@ const errorDeviceInfo = "/for/errordevicepath"
 const errorBlockDevice = "/for/errorblock"
 const notBlockDevice = "/for/notblocktest"
 
-var (
-	commandArgs []string
-        commandOutput string
-        commandFailure bool
-	commandExec = func(cmd string, args ...string) *exec.Cmd {
-		commandArgs = args
-
-		cs := []string{"-test.run=TestHelperProcess", "--"}
-		cs = append(cs, args...)
-		cs = append(cs, commandOutput)
-
-		ret := exec.Command(os.Args[0], cs...)
-		ret.Env = []string{"GO_WANT_HELPER_PROCESS=1"}
-		if commandFailure {
-			ret.Stdout = ioutil.Discard
-		}
-		return ret
-	}
-)
-
+var unmountSuccess = func(target string) error { return nil }
 
 func TestNodePublishVolume(t *testing.T) {
+	newmounter = fakemounter.NewMounter
 	testCases := []struct {
 		name       string
 		req        *csi.NodePublishVolumeRequest
@@ -116,52 +94,7 @@ func TestNodePublishVolume(t *testing.T) {
 			},
 			expErrCode: codes.InvalidArgument,
 		},
-		{
-			name: "Not supported volume capabilities",
-			req: &csi.NodePublishVolumeRequest{
-				VolumeId:          "testvolumeid",
-				TargetPath:        defaultTargetPath,
-				StagingTargetPath: defaultStagingPath,
-				Readonly:          false,
-				VolumeCapability:  stdVolCapNotSupported[0],
-			},
-			expErrCode: codes.InvalidArgument,
-		},
-		{
-			name: "Raw block request with validdevice",
-			req: &csi.NodePublishVolumeRequest{
-				VolumeId:          defaultVolumeID,
-				TargetPath:        defaultTargetPath,
-				StagingTargetPath: defaultStagingPath,
-				Readonly:          false,
-				VolumeCapability:  stdBlockVolCap[0],
-			},
-			expErrCode: codes.OK,
-		},
-		{
-			name: "Raw block request with invaliddevice",
-			req: &csi.NodePublishVolumeRequest{
-				VolumeId:          defaultVolumeID,
-				TargetPath:        defaultTargetPath,
-				StagingTargetPath: defaultStagingPath,
-				Readonly:          false,
-				VolumeCapability:  stdBlockVolCap[0],
-			},
-			expErrCode: codes.InvalidArgument,
-		},
-		{
-			name: "Raw block request with invalidTarget",
-			req: &csi.NodePublishVolumeRequest{
-				VolumeId:          defaultVolumeID,
-				TargetPath:        "",
-				StagingTargetPath: defaultStagingPath,
-				Readonly:          false,
-				VolumeCapability:  stdBlockVolCap[0],
-			},
-			expErrCode: codes.InvalidArgument,
-		},
 	}
-
 	icDriver := inits3Driver(t)
 
 	for _, tc := range testCases {
@@ -184,6 +117,7 @@ func TestNodePublishVolume(t *testing.T) {
 }
 
 func TestNodeUnpublishVolume(t *testing.T) {
+	fuseunmount = unmountSuccess
 	testCases := []struct {
 		name       string
 		req        *csi.NodeUnpublishVolumeRequest
@@ -262,7 +196,7 @@ func TestNodeStageVolume(t *testing.T) {
 			expErrCode: codes.InvalidArgument,
 		},
 		{
-			name: "Empty target path",
+			name: "Empty Stage target path",
 			req: &csi.NodeStageVolumeRequest{
 				VolumeId:          volumeID,
 				StagingTargetPath: "",
@@ -278,33 +212,6 @@ func TestNodeStageVolume(t *testing.T) {
 				VolumeCapability:  nil,
 			},
 			expErrCode: codes.InvalidArgument,
-		},
-		{
-			name: "Not supported volume capabilities",
-			req: &csi.NodeStageVolumeRequest{
-				VolumeId:          volumeID,
-				StagingTargetPath: defaultTargetPath,
-				VolumeCapability:  stdVolCapNotSupported[0],
-			},
-			expErrCode: codes.InvalidArgument,
-		},
-		{
-			name: "Empty device path in the context",
-			req: &csi.NodeStageVolumeRequest{
-				VolumeId:          volumeID,
-				StagingTargetPath: defaultTargetPath,
-				VolumeCapability:  stdVolCap[0],
-			},
-			expErrCode: codes.InvalidArgument,
-		},
-		{
-			name: "Valid raw block StageVolume request",
-			req: &csi.NodeStageVolumeRequest{
-				VolumeId:          volumeID,
-				StagingTargetPath: defaultStagingPath,
-				VolumeCapability:  stdBlockVolCap[0],
-			},
-			expErrCode: codes.OK,
 		},
 	}
 
@@ -390,123 +297,6 @@ func TestNodeGetCapabilities(t *testing.T) {
 	}
 }
 
-
-func TestNodeGetVolumeStats(t *testing.T) {
-	testCases := []struct {
-		name       string
-		req        *csi.NodeGetVolumeStatsRequest
-		resp       *csi.NodeGetVolumeStatsResponse
-		expErrCode codes.Code
-		expError   string
-	}{
-		{
-			name: "Mode is block",
-			req: &csi.NodeGetVolumeStatsRequest{
-				VolumeId:   defaultVolumeID,
-				VolumePath: defaultVolumePath,
-			},
-			resp: &csi.NodeGetVolumeStatsResponse{
-				Usage: []*csi.VolumeUsage{
-					{
-						Total: 1,
-						Unit:  1,
-					},
-				},
-			},
-			expErrCode: codes.OK,
-			expError:   "",
-		},
-		{
-			name: "Empty volume ID",
-			req: &csi.NodeGetVolumeStatsRequest{
-				VolumeId:   "",
-				VolumePath: defaultVolumePath,
-			},
-			resp:       nil,
-			expErrCode: codes.InvalidArgument,
-			expError:   "",
-		},
-		{
-			name: "Empty volume path",
-			req: &csi.NodeGetVolumeStatsRequest{
-				VolumeId:   defaultVolumeID,
-				VolumePath: "",
-			},
-			resp:       nil,
-			expErrCode: codes.InvalidArgument,
-			expError:   "",
-		},
-		{
-			name: "Mode is File",
-			req: &csi.NodeGetVolumeStatsRequest{
-				VolumeId:   defaultVolumeID,
-				VolumePath: notBlockDevice,
-			},
-			resp: &csi.NodeGetVolumeStatsResponse{
-				Usage: []*csi.VolumeUsage{
-					{
-						Available: 1,
-						Total:     1,
-						Used:      1,
-						Unit:      1,
-					},
-					{
-						Available: 1,
-						Total:     1,
-						Used:      1,
-						Unit:      2,
-					},
-				},
-			},
-			expErrCode: codes.OK,
-			expError:   "",
-		},
-		{
-			name: "Error in checking block device",
-			req: &csi.NodeGetVolumeStatsRequest{
-				VolumeId:   defaultVolumeID,
-				VolumePath: errorBlockDevice,
-			},
-			resp:     nil,
-			expError: "Failed to determine if volume is block",
-		},
-		{
-			name: "Failed to get block size",
-			req: &csi.NodeGetVolumeStatsRequest{
-				VolumeId:   defaultVolumeID,
-				VolumePath: errorDeviceInfo,
-			},
-			resp:     nil,
-			expError: "Failed to get size of block volume",
-		},
-	}
-	icDriver := inits3Driver(t)
-	for _, tc := range testCases {
-		t.Logf("Test case: %s", tc.name)
-		fmt.Println(tc.resp)
-		resp, err := icDriver.ns.NodeGetVolumeStats(context.Background(), tc.req)
-		if !reflect.DeepEqual(resp, tc.resp) {
-			t.Fatalf("Expected response: %v, got: %v", tc.resp, resp)
-		}
-		if tc.expError != "" {
-			assert.NotNil(t, err)
-			continue
-		}
-		if err != nil {
-			serverError, ok := status.FromError(err)
-			if !ok {
-				t.Fatalf("Could not get error status code from err: %v", err)
-			}
-			if serverError.Code() != tc.expErrCode {
-				t.Fatalf("Expected error code: %v, got: %v. err : %v", tc.expErrCode, serverError.Code(), err)
-			}
-			continue
-		}
-		if tc.expErrCode != codes.OK {
-			t.Fatalf("Expected error: %v, got no error", tc.expErrCode)
-		}
-	}
-}
 
 func TestNodeExpandVolume(t *testing.T) {
 	icDriver := inits3Driver(t)

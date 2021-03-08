@@ -21,18 +21,26 @@ func inits3Driver(t *testing.T) *s3Driver {
 	vendorVersion := "test-vendor-version-1.1.2"
 	driver := "mydriver"
 
+	endpoint := "test-endpoint"
+	nodeID := "test-nodeID"
+
 	// Creating test logger
 	logger, teardown := cloudProvider.GetTestLogger(t)
 	defer teardown()
 	icDriver := GetS3CSIDriver()
 
 	// Setup the IBM CSI driver
-	err := icDriver.Setups3Driver(logger, driver, vendorVersion)
-	if err != nil {
-		t.Fatalf("Failed to setup IBM CSI Driver: %v", err)
-	}
+	icDriver, err := icDriver.Setups3Driver(logger, driver, vendorVersion)
+        if err != nil {
+                t.Fatalf("Failed to setup IBM CSI Driver: %v", err)
+        }
 
-	return icDriver
+	icsDriver, err := icDriver.NewS3CosDriver(nodeID, endpoint)
+	if err != nil {
+                t.Fatalf("Failed to create New COS CSI Driver: %v", err)
+        }
+
+	return icsDriver
 }
 
 func TestSetups3Driver(t *testing.T) {
@@ -49,6 +57,6 @@ func TestSetups3Driver(t *testing.T) {
 	icDriver := GetS3CSIDriver()
 
 	// Failed setting up driver, name  nil
-	err := icDriver.Setups3Driver(logger, name, vendorVersion)
+	icDriver, err := icDriver.Setups3Driver(logger, name, vendorVersion)
 	assert.NotNil(t, err)
 }

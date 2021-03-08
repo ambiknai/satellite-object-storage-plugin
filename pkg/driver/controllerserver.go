@@ -17,7 +17,7 @@ import (
 	"github.com/IBM/ibmcloud-volume-interface/lib/provider"
 	"github.com/IBM/satellite-object-storage-plugin/pkg/s3client"
 	"github.com/container-storage-interface/spec/lib/go/csi"
-	"github.com/kubernetes-csi/drivers/pkg/csi-common"
+	csicommon "github.com/kubernetes-csi/drivers/pkg/csi-common"
 	commonError "github.ibm.com/alchemy-containers/ibm-csi-common/pkg/messages"
 	"github.ibm.com/alchemy-containers/ibm-csi-common/pkg/metrics"
 	"github.ibm.com/alchemy-containers/ibm-csi-common/pkg/utils"
@@ -296,4 +296,37 @@ func sanitizeVolumeID(volumeID string) string {
 		volumeID = hex.EncodeToString(h.Sum(nil))
 	}
 	return volumeID
+}
+
+// ControllerGetCapabilities implements the default GRPC callout.
+func (csiCS *controllerServer) ControllerGetCapabilities(ctx context.Context, req *csi.ControllerGetCapabilitiesRequest) (*csi.ControllerGetCapabilitiesResponse, error) {
+	ctxLogger, requestID := utils.GetContextLogger(ctx, false)
+	// populate requestID in the context
+	_ = context.WithValue(ctx, provider.RequestID, requestID)
+
+	ctxLogger.Info("CSIControllerServer-GetCapabilities", zap.Reflect("Request", *req))
+	// Return the capabilities as per provider volume capabilities
+	return &csi.ControllerGetCapabilitiesResponse{
+		Capabilities: csiCS.s3Driver.cap,
+	}, nil
+}
+
+// GetCapacity ...
+func (csiCS *controllerServer) GetCapacity(ctx context.Context, req *csi.GetCapacityRequest) (*csi.GetCapacityResponse, error) {
+	ctxLogger, requestID := utils.GetContextLogger(ctx, false)
+	// populate requestID in the context
+	_ = context.WithValue(ctx, provider.RequestID, requestID)
+
+	ctxLogger.Info("CSIControllerServer-GetCapacity", zap.Reflect("Request", *req))
+	return nil, commonError.GetCSIError(ctxLogger, commonError.MethodUnimplemented, requestID, nil, "GetCapacity")
+}
+
+//ListVolumes
+func (csiCS *controllerServer) ListVolumes(ctx context.Context, req *csi.ListVolumesRequest) (*csi.ListVolumesResponse, error) {
+        ctxLogger, requestID := utils.GetContextLogger(ctx, false)
+        // populate requestID in the context
+        _ = context.WithValue(ctx, provider.RequestID, requestID)
+
+        ctxLogger.Info("CSIControllerServer-ListVolumes", zap.Reflect("Request", *req))
+        return nil, commonError.GetCSIError(ctxLogger, commonError.MethodUnimplemented, requestID, nil, "ListVolumes")
 }

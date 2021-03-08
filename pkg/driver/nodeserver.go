@@ -33,7 +33,11 @@ type nodeServer struct {
 	*s3Driver
 }
 
-var mounterObj mounter.Mounter
+var(
+	mounterObj  mounter.Mounter
+	newmounter = mounter.NewMounter
+	fuseunmount = mounter.FuseUnmount
+)
 
 func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublishVolumeRequest) (*csi.NodePublishVolumeResponse, error) {
 	var (
@@ -106,7 +110,7 @@ func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 	fmt.Println("CreateVolume Secrets:\n\t", secretMap)
 
 	//func newMounter(mounter string, bucket string, objpath string, endpoint string, region string, keys string) (Mounter, error) {
-	if mounterObj, err = mounter.NewMounter("s3fs",
+	if mounterObj, err = newmounter("s3fs",
 		attrib["bucket-name"], attrib["obj-path"],
 		attrib["cos-endpoint"], attrib["regn-class"],
 		fmt.Sprintf("%s:%s", accessKey, secretKey)); err != nil {
@@ -142,7 +146,7 @@ func (ns *nodeServer) NodeUnpublishVolume(ctx context.Context, req *csi.NodeUnpu
 	}
 	ctxLogger.Info("Unmounting  target path", zap.String("targetPath", targetPath))
 
-	if err := mounter.FuseUnmount(targetPath); err != nil {
+	if err := fuseunmount(targetPath); err != nil {
 		return nil, commonError.GetCSIError(ctxLogger, commonError.UnmountFailed, requestID, err, targetPath)
 	}
 	ctxLogger.Info("Successfully unmounted  target path", zap.String("targetPath", targetPath))
