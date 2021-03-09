@@ -20,7 +20,7 @@ import (
 
 type identityServer struct {
 	*csicommon.DefaultIdentityServer
-        *s3Driver
+	*s3Driver
 }
 
 // GetPluginInfo ...

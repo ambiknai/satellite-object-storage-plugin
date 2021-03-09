@@ -8,12 +8,11 @@
  * the U.S. Copyright Office.
  ******************************************************************************/
 
-
 package fake
 
 import (
-	"github.com/golang/glog"
 	"github.com/IBM/satellite-object-storage-plugin/pkg/mounter"
+	"github.com/golang/glog"
 )
 
 // Mounter interface defined in mounter.go
@@ -25,7 +24,6 @@ type fakes3fsMounter struct {
 	regnClass  string //From Secret in SC
 	accessKeys string
 }
-
 
 func fakenewS3fsMounter(bucket string, objpath string, endpoint string, region string, keys string) (mounter.Mounter, error) {
 	glog.Infof("-newS3fsMounter-")
@@ -56,4 +54,3 @@ func (s3fs *fakes3fsMounter) Mount(source string, target string) error {
 func (s3fs *fakes3fsMounter) Unmount(target string) error {
 	return nil
 }
-

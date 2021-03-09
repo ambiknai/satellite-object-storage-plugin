@@ -12,14 +12,13 @@
 package driver
 
 import (
-	"fmt"
 	"errors"
+	"fmt"
 	"github.com/IBM/satellite-object-storage-plugin/pkg/s3client"
 	csi "github.com/container-storage-interface/spec/lib/go/csi"
 	csicommon "github.com/kubernetes-csi/drivers/pkg/csi-common"
 	commonError "github.ibm.com/alchemy-containers/ibm-csi-common/pkg/messages"
 	"go.uber.org/zap"
-	"github.ibm.com/alchemy-containers/ibm-csi-common/pkg/utils"
 )
 
 const (
@@ -44,8 +43,8 @@ type s3Driver struct {
 	vendorVersion string
 	logger        *zap.Logger
 
-	cap     []*csi.ControllerServiceCapability
-	vc      []*csi.VolumeCapability_AccessMode
+	cap   []*csi.ControllerServiceCapability
+	vc    []*csi.VolumeCapability_AccessMode
 	nscap []*csi.NodeServiceCapability
 }
 
@@ -97,7 +96,7 @@ func (s3 *s3Driver) newIdentityServer(d *csicommon.CSIDriver) *identityServer {
 	s3.logger.Info("-newIdentityServer-")
 	return &identityServer{
 		DefaultIdentityServer: csicommon.NewDefaultIdentityServer(d),
-		s3Driver:                s3,
+		s3Driver:              s3,
 	}
 }
 
@@ -105,7 +104,7 @@ func (s3 *s3Driver) newControllerServer(d *csicommon.CSIDriver) *controllerServe
 	s3.logger.Info("-newControllerServer-")
 	return &controllerServer{
 		DefaultControllerServer: csicommon.NewDefaultControllerServer(d),
-		s3Driver: s3,
+		s3Driver:                s3,
 	}
 }
 
@@ -113,11 +112,11 @@ func (s3 *s3Driver) newNodeServer(d *csicommon.CSIDriver) *nodeServer {
 	s3.logger.Info("-newNodeServer-")
 	return &nodeServer{
 		DefaultNodeServer: csicommon.NewDefaultNodeServer(d),
-		s3Driver: s3,
+		s3Driver:          s3,
 	}
 }
 
-func  (csiDriver *s3Driver) NewS3CosDriver(nodeID string, endpoint string) (*s3Driver, error) {
+func (csiDriver *s3Driver) NewS3CosDriver(nodeID string, endpoint string) (*s3Driver, error) {
 	driver := csicommon.NewCSIDriver(csiDriver.name, csiDriver.vendorVersion, nodeID)
 	if driver == nil {
 		csiDriver.logger.Error("Failed to initialize CSI Driver")
@@ -130,31 +129,15 @@ func  (csiDriver *s3Driver) NewS3CosDriver(nodeID string, endpoint string) (*s3D
 
 	csiDriver.endpoint = endpoint
 	csiDriver.driver = driver
-	csiDriver.s3client =  s3client
+	csiDriver.s3client = s3client
 
 	csiDriver.driver.AddControllerServiceCapabilities([]csi.ControllerServiceCapability_RPC_Type{csi.ControllerServiceCapability_RPC_CREATE_DELETE_VOLUME})
 	csiDriver.driver.AddVolumeCapabilityAccessModes([]csi.VolumeCapability_AccessMode_Mode{csi.VolumeCapability_AccessMode_SINGLE_NODE_WRITER})
 
-	/*csc := []csi.ControllerServiceCapability_RPC_Type{
-                csi.ControllerServiceCapability_RPC_CREATE_DELETE_VOLUME,
-        }
-        _ = csiDriver.AddControllerServiceCapabilities(csc)
-
-        ns := []csi.NodeServiceCapability_RPC_Type{
-                csi.NodeServiceCapability_RPC_GET_VOLUME_STATS,
-        }
-
-        _ = csiDriver.AddNodeServiceCapabilities(ns)
-
-	vcam := []csi.VolumeCapability_AccessMode_Mode{
-		csi.VolumeCapability_AccessMode_SINGLE_NODE_WRITER,
-	}
-	_ = csiDriver.AddVolumeCapabilityAccessModes(vcam)*/
-
-        // Create GRPC servers
-        csiDriver.ids = csiDriver.newIdentityServer(csiDriver.driver)
-        csiDriver.ns = csiDriver.newNodeServer(csiDriver.driver)
-        csiDriver.cs = csiDriver.newControllerServer(csiDriver.driver)
+	// Create GRPC servers
+	csiDriver.ids = csiDriver.newIdentityServer(csiDriver.driver)
+	csiDriver.ns = csiDriver.newNodeServer(csiDriver.driver)
+	csiDriver.cs = csiDriver.newControllerServer(csiDriver.driver)
 
 	return csiDriver, nil
 }
@@ -177,44 +160,4 @@ func getVolumeByName(volName string) (s3Volume, error) {
 		}
 	}
 	return s3Volume{}, fmt.Errorf("volume name %s does not exit in the volumes list", volName)
-}
-
-
-// AddControllerServiceCapabilities ...
-func (s3 *s3Driver) AddControllerServiceCapabilities(cl []csi.ControllerServiceCapability_RPC_Type) error {
-	s3.logger.Info("IBMCSIDriver-AddControllerServiceCapabilities...", zap.Reflect("ControllerServiceCapabilities", cl))
-	var csc []*csi.ControllerServiceCapability
-	for _, c := range cl {
-		s3.logger.Info("Adding controller service capability", zap.Reflect("Capability", c.String()))
-		csc = append(csc, utils.NewControllerServiceCapability(c))
-	}
-	s3.cap = csc
-	s3.logger.Info("Successfully added Controller Service Capabilities")
-	return nil
-}
-
-// AddNodeServiceCapabilities ...
-func (s3 *s3Driver) AddNodeServiceCapabilities(nl []csi.NodeServiceCapability_RPC_Type) error {
-	s3.logger.Info("IBMCSIDriver-AddNodeServiceCapabilities...", zap.Reflect("NodeServiceCapabilities", nl))
-	var nsc []*csi.NodeServiceCapability
-	for _, n := range nl {
-		s3.logger.Info("Adding node service capability", zap.Reflect("NodeServiceCapabilities", n.String()))
-		nsc = append(nsc, utils.NewNodeServiceCapability(n))
-	}
-	s3.nscap = nsc
-	s3.logger.Info("Successfully added Node Service Capabilities")
-	return nil
-}
-
-// AddVolumeCapabilityAccessModes ...
-func (s3 *s3Driver) AddVolumeCapabilityAccessModes(vcapa []csi.VolumeCapability_AccessMode_Mode) error {
-	s3.logger.Info("IBMCSIDriver-AddVolumeCapabilityAccessModes...", zap.Reflect("VolumeCapabilityAccessModes", vcapa))
-	var vca []*csi.VolumeCapability_AccessMode
-	for _, c := range vcapa {
-		s3.logger.Info("Enabling volume access mode", zap.Reflect("Mode", c.String()))
-		vca = append(vca, utils.NewVolumeCapabilityAccessMode(c))
-	}
-	s3.vc = vca
-	s3.logger.Info("Successfully enabled Volume Capability Access Modes")
-	return nil
 }

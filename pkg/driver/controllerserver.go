@@ -229,18 +229,6 @@ func (cs *controllerServer) CreateSnapshot(ctx context.Context, req *csi.CreateS
 	_ = context.WithValue(ctx, provider.RequestID, requestID)
 
 	ctxLogger.Info("CSIControllerServer-CreateSnapshot", zap.Reflect("Request", *req))
-	if err := cs.Driver.ValidateControllerServiceRequest(csi.ControllerServiceCapability_RPC_CREATE_DELETE_SNAPSHOT); err != nil {
-		ctxLogger.Info("invalid create snapshot req:", zap.Reflect("Request", *req))
-		return nil, err
-	}
-
-	if len(req.GetName()) == 0 {
-		return nil, status.Error(codes.InvalidArgument, "Name missing in request")
-	}
-	// Check arguments
-	if len(req.GetSourceVolumeId()) == 0 {
-		return nil, commonError.GetCSIError(ctxLogger, commonError.EmptyVolumeID, requestID, nil)
-	}
 
 	return nil, commonError.GetCSIError(ctxLogger, commonError.MethodUnimplemented, requestID, nil, "CreateSnapshot")
 
@@ -252,15 +240,6 @@ func (cs *controllerServer) DeleteSnapshot(ctx context.Context, req *csi.DeleteS
 	_ = context.WithValue(ctx, provider.RequestID, requestID)
 
 	ctxLogger.Info("CSIControllerServer-DeleteSnapshot", zap.Reflect("Request", *req))
-	// Check arguments
-	if len(req.GetSnapshotId()) == 0 {
-		return nil, commonError.GetCSIError(ctxLogger, commonError.EmptyVolumeID, requestID, nil)
-	}
-
-	if err := cs.Driver.ValidateControllerServiceRequest(csi.ControllerServiceCapability_RPC_CREATE_DELETE_SNAPSHOT); err != nil {
-		ctxLogger.Info("invalid delete snapshot req", zap.Reflect("Request", *req))
-		return nil, err
-	}
 
 	return nil, commonError.GetCSIError(ctxLogger, commonError.MethodUnimplemented, requestID, nil, "DeleteSnapshot")
 }
@@ -271,10 +250,6 @@ func (cs *controllerServer) ListSnapshots(ctx context.Context, req *csi.ListSnap
 	_ = context.WithValue(ctx, provider.RequestID, requestID)
 
 	ctxLogger.Info("CSIControllerServer-ListSnapshots", zap.Reflect("Request", *req))
-	if err := cs.Driver.ValidateControllerServiceRequest(csi.ControllerServiceCapability_RPC_LIST_SNAPSHOTS); err != nil {
-		ctxLogger.Info("invalid list snapshot req:", zap.Reflect("Request", *req))
-		return nil, err
-	}
 
 	return nil, commonError.GetCSIError(ctxLogger, commonError.MethodUnimplemented, requestID, nil, "ListSnapshots")
 }
@@ -298,19 +273,6 @@ func sanitizeVolumeID(volumeID string) string {
 	return volumeID
 }
 
-// ControllerGetCapabilities implements the default GRPC callout.
-func (csiCS *controllerServer) ControllerGetCapabilities(ctx context.Context, req *csi.ControllerGetCapabilitiesRequest) (*csi.ControllerGetCapabilitiesResponse, error) {
-	ctxLogger, requestID := utils.GetContextLogger(ctx, false)
-	// populate requestID in the context
-	_ = context.WithValue(ctx, provider.RequestID, requestID)
-
-	ctxLogger.Info("CSIControllerServer-GetCapabilities", zap.Reflect("Request", *req))
-	// Return the capabilities as per provider volume capabilities
-	return &csi.ControllerGetCapabilitiesResponse{
-		Capabilities: csiCS.s3Driver.cap,
-	}, nil
-}
-
 // GetCapacity ...
 func (csiCS *controllerServer) GetCapacity(ctx context.Context, req *csi.GetCapacityRequest) (*csi.GetCapacityResponse, error) {
 	ctxLogger, requestID := utils.GetContextLogger(ctx, false)
@@ -323,10 +285,10 @@ func (csiCS *controllerServer) GetCapacity(ctx context.Context, req *csi.GetCapa
 
 //ListVolumes
 func (csiCS *controllerServer) ListVolumes(ctx context.Context, req *csi.ListVolumesRequest) (*csi.ListVolumesResponse, error) {
-        ctxLogger, requestID := utils.GetContextLogger(ctx, false)
-        // populate requestID in the context
-        _ = context.WithValue(ctx, provider.RequestID, requestID)
+	ctxLogger, requestID := utils.GetContextLogger(ctx, false)
+	// populate requestID in the context
+	_ = context.WithValue(ctx, provider.RequestID, requestID)
 
-        ctxLogger.Info("CSIControllerServer-ListVolumes", zap.Reflect("Request", *req))
-        return nil, commonError.GetCSIError(ctxLogger, commonError.MethodUnimplemented, requestID, nil, "ListVolumes")
+	ctxLogger.Info("CSIControllerServer-ListVolumes", zap.Reflect("Request", *req))
+	return nil, commonError.GetCSIError(ctxLogger, commonError.MethodUnimplemented, requestID, nil, "ListVolumes")
 }

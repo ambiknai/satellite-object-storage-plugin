@@ -31,14 +31,14 @@ func inits3Driver(t *testing.T) *s3Driver {
 
 	// Setup the IBM CSI driver
 	icDriver, err := icDriver.Setups3Driver(logger, driver, vendorVersion)
-        if err != nil {
-                t.Fatalf("Failed to setup IBM CSI Driver: %v", err)
-        }
+	if err != nil {
+		t.Fatalf("Failed to setup IBM CSI Driver: %v", err)
+	}
 
 	icsDriver, err := icDriver.NewS3CosDriver(nodeID, endpoint)
 	if err != nil {
-                t.Fatalf("Failed to create New COS CSI Driver: %v", err)
-        }
+		t.Fatalf("Failed to create New COS CSI Driver: %v", err)
+	}
 
 	return icsDriver
 }

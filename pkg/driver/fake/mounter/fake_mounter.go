@@ -8,12 +8,11 @@
  * the U.S. Copyright Office.
  ******************************************************************************/
 
- package fake
+package fake
 
 import (
 	"fmt"
 	"github.com/IBM/satellite-object-storage-plugin/pkg/mounter"
-
 )
 
 const (

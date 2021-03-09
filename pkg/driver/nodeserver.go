@@ -33,9 +33,9 @@ type nodeServer struct {
 	*s3Driver
 }
 
-var(
+var (
 	mounterObj  mounter.Mounter
-	newmounter = mounter.NewMounter
+	newmounter  = mounter.NewMounter
 	fuseunmount = mounter.FuseUnmount
 )
 
@@ -210,7 +210,7 @@ func (ns *nodeServer) NodeGetCapabilities(ctx context.Context, req *csi.NodeGetC
 	nscap := &csi.NodeServiceCapability{
 		Type: &csi.NodeServiceCapability_Rpc{
 			Rpc: &csi.NodeServiceCapability_RPC{
-				Type: csi.NodeServiceCapability_RPC_STAGE_UNSTAGE_VOLUME,
+				Type: csi.NodeServiceCapability_RPC_GET_VOLUME_STATS,
 			},
 		},
 	}

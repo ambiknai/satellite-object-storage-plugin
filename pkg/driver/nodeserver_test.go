@@ -12,13 +12,13 @@
 package driver
 
 import (
-	"testing"
+	fakemounter "github.com/IBM/satellite-object-storage-plugin/pkg/driver/fake/mounter"
 	csi "github.com/container-storage-interface/spec/lib/go/csi"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	 fakemounter "github.com/IBM/satellite-object-storage-plugin/pkg/driver/fake/mounter"
+	"testing"
 )
 
 const defaultVolumeID = "csiprovidervolumeid"
@@ -297,10 +297,8 @@ func TestNodeGetCapabilities(t *testing.T) {
 	}
 }
 
-
 func TestNodeExpandVolume(t *testing.T) {
 	icDriver := inits3Driver(t)
 	_, err := icDriver.ns.NodeExpandVolume(context.Background(), &csi.NodeExpandVolumeRequest{})
 	assert.NotNil(t, err)
 }
-
