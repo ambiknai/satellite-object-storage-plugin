@@ -69,12 +69,8 @@ var (
 	s3CosVolumeSnapshots map[string]s3VolumeSnapshot
 )
 
-// GetS3CSIDriver ...
-func GetS3CSIDriver() *s3Driver {
-	return &s3Driver{}
-}
-
-func (csiDriver *s3Driver) Setups3Driver(lgr *zap.Logger, name, vendorVersion string) (*s3Driver, error) {
+func Setups3Driver(lgr *zap.Logger, name, vendorVersion string) (*s3Driver, error) {
+	csiDriver := &s3Driver{}
 	csiDriver.logger = lgr
 	csiDriver.logger.Info("S3CSIDriver-SetupS3CSIDriver setting up S3 CSI Driver...")
 

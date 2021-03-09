@@ -27,10 +27,9 @@ func inits3Driver(t *testing.T) *s3Driver {
 	// Creating test logger
 	logger, teardown := cloudProvider.GetTestLogger(t)
 	defer teardown()
-	icDriver := GetS3CSIDriver()
 
 	// Setup the IBM CSI driver
-	icDriver, err := icDriver.Setups3Driver(logger, driver, vendorVersion)
+	icDriver, err := Setups3Driver(logger, driver, vendorVersion)
 	if err != nil {
 		t.Fatalf("Failed to setup IBM CSI Driver: %v", err)
 	}
@@ -54,9 +53,8 @@ func TestSetups3Driver(t *testing.T) {
 	name := ""
 	logger, teardown := cloudProvider.GetTestLogger(t)
 	defer teardown()
-	icDriver := GetS3CSIDriver()
 
 	// Failed setting up driver, name  nil
-	icDriver, err := icDriver.Setups3Driver(logger, name, vendorVersion)
+	_, err := Setups3Driver(logger, name, vendorVersion)
 	assert.NotNil(t, err)
 }
