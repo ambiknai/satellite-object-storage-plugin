@@ -127,6 +127,7 @@ func (cs *controllerServer) CreateVolume(ctx context.Context, req *csi.CreateVol
 	fmt.Println("CreateVolume Secrets:\n\t", secretMap)
 
 	creds, err := cs.getCredentials(req.GetSecrets())
+	fmt.Println("creds", creds)
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, fmt.Sprintf("Error in getting credentials %v", err))
 	}
@@ -154,10 +155,10 @@ func (cs *controllerServer) CreateVolume(ctx context.Context, req *csi.CreateVol
 		return nil, status.Error(codes.PermissionDenied, fmt.Sprintf("Unable to access the bucket: %v", bucketName))
 	}
 
-	params["cos-endpoint"] = endPoint
+	/*params["cos-endpoint"] = endPoint
 	params["regn-class"] = regnClass
 	params["bucket-name"] = bucketName
-	params["obj-path"] = secretMap["obj-path"]
+	params["obj-path"] = secretMap["obj-path"]*/
 
 	klog.Infof("create volume: %v", volumeID)
 
